@@ -8,12 +8,8 @@ blockSize = 1088
 capacity = b - blockSize
 file = open('input.txt', 'rb')
 inputMessage = bytearray(file.read())
-print('Input Message: ', inputMessage.__class__)
-#x = int(inputMessage[0:2], 10)
 y = int.from_bytes(inputMessage[0:8], "big", signed=True)
-print(bin(inputMessage[0]) + ' ' + bin(inputMessage[1])[2:])
 
-print(bin(y))
 
 '''
 inputBits = []
@@ -26,19 +22,19 @@ print(len(inputMessage)*8)
 paddingNumber = blockSize - (len(inputMessage)*8 % blockSize)  # count of bits to add
 print(paddingNumber)
 if paddingNumber == 0:
-    inputMessage.join(bytes([0b10000000]))
+    inputMessage.join(bytes([l]))
     for i in range(1, blockSize//8 - 1):
         inputMessage.join(bytes([0b00000000]))
-    inputMessage.join(bytes([0b00000001]))
+    inputMessage.join(bytes([0x80]))
 elif paddingNumber == 8:
-    inputMessage.join(bytes([0b10000001]))
+    inputMessage.join(bytes([l ^ 0x80]))
 elif paddingNumber == 16:
-    inputMessage.join(bytes([0b10000000, 0b00000001]))
+    inputMessage.join(bytes([l, 0x80]))
 else:
-    inputMessage.append(0b10000000)
+    inputMessage.append(l)
     for i in range(1, paddingNumber // 8 - 1):
         inputMessage.append(0b00000000)
-    inputMessage.append(0b00000001)
+    inputMessage.append(0x80)
 
 print(len(inputMessage)*8)
 blocksNum = (len(inputMessage)*8) // blockSize
@@ -146,10 +142,11 @@ for blockId in range (0, blocksNum):
     blockBytes = inputMessage[blockId * (blockSize // 8) : (blockId+1) * (blockSize // 8)]
     block = []
     for start in range(0, blockSize//8, 8):
-        block.append(int.from_bytes(inputMessage[start : start+8], "big", signed=False))
+        block.append(int.from_bytes(blockBytes[start : start+8], "little", signed=False))
     for start in range(blockSize//8, b//8, 8):
         block.append(0)
-    block = [block[i:i+5] for i in range(0, 25, 5)]
+    #lanes = [[load64(state[8 * (x + 5 * y):8 * (x + 5 * y) + 8]) for y in range(5)] for x in range(5)]
+    block = [block[i:21+i:5] for i in range(0, 5)]
     if blockId != 0:
         for i in range(5):
             for j in range(5):
@@ -162,8 +159,8 @@ for blockId in range (0, blocksNum):
 
 res = 0
 for i in range(4):
-    res |= state[0][i] << (3-i) * 64
+    res |= state[i][0] << i * 64
 
-print(res.to_bytes(32, "big").hex())
+print(res.to_bytes(32, "little").hex())
 
 
