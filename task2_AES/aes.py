@@ -73,7 +73,6 @@ def add_round_key(s, k):
             s[i][j] ^= k[i][j]
 
 
-# xtime = lambda a: (((a << 1) ^ 0x1B) & 0xFF) if (a & 0x80) else (a << 1)
 def xtime(a):
     return (((a << 1) ^ 0x1B) & 0xFF) if (a & 0x80) else (a << 1)
 
@@ -86,22 +85,34 @@ def mix_single_column(a):
     a[3] = xtime(s[0]) ^ s[0] ^ s[1] ^ s[2] ^ xtime(s[3])
     return a
 
+
 def mix_columns(s):
     for i in range(4):
         mix_single_column(s[i])
 
 
-def inv_mix_columns(s):
-    # see Sec 4.1.3 in The Design of Rijndael
-    for i in range(4):
-        u = xtime(xtime(s[i][0] ^ s[i][2]))
-        v = xtime(xtime(s[i][1] ^ s[i][3]))
-        s[i][0] ^= u
-        s[i][1] ^= v
-        s[i][2] ^= u
-        s[i][3] ^= v
+def mul(a, b):
+    result = 0
+    tmp = a
+    for i in range(0, 8):
+        if b & (0x01 << i) != 0:
+            result ^= tmp
+        tmp = xtime(tmp)
+    return result
 
-    mix_columns(s)
+
+def inv_mix_single_column(a):
+    s = [a[i] for i in range(Nb)]
+    a[0] = mul(s[0], 0x0e) ^ mul(s[1], 0x0b) ^ mul(s[2], 0x0d) ^ mul(s[3], 0x09)
+    a[1] = mul(s[0], 0x09) ^ mul(s[1], 0x0e) ^ mul(s[2], 0x0b) ^ mul(s[3], 0x0d)
+    a[2] = mul(s[0], 0x0d) ^ mul(s[1], 0x09) ^ mul(s[2], 0x0e) ^ mul(s[3], 0x0b)
+    a[3] = mul(s[0], 0x0b) ^ mul(s[1], 0x0d) ^ mul(s[2], 0x09) ^ mul(s[3], 0x0e)
+    return a
+
+
+def inv_mix_columns(s):
+    for i in range(4):
+        inv_mix_single_column(s[i])
 
 
 r_con = (
@@ -266,6 +277,8 @@ if __name__ == '__main__':
     elif 'decrypt'.startswith(sys.argv[1]):
         file = open('input.bin', 'rb')
         inputMessage = bytearray(file.read())
+        print(mul(0x3, 2))
+        print(mul(2, 0x3))
         print("Size of input: " + str(len(inputMessage)) + " Bytes")
         res = decrypt_ecb(sys.argv[2], inputMessage)
         out = open('output.txt', 'wb')
