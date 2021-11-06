@@ -73,8 +73,13 @@ def add_round_key(s, k):
             s[i][j] ^= k[i][j]
 
 
+"""Multiply by x in GF(256)  x = {02}"""
 def xtime(a):
-    return (((a << 1) ^ 0x1B) & 0xFF) if (a & 0x80) else (a << 1)
+    if (a & 0x80)!=0:
+        """We should take modulo by irreducible polynomial"""
+        return (((a << 1) ^ 0x1B) & 0xFF)
+    else:
+        return a << 1
 
 
 def mix_single_column(a):
@@ -91,6 +96,7 @@ def mix_columns(s):
         mix_single_column(s[i])
 
 
+"""Multiply in GF(256)"""
 def mul(a, b):
     result = 0
     tmp = a
@@ -115,6 +121,7 @@ def inv_mix_columns(s):
         inv_mix_single_column(s[i])
 
 
+"""First bytes from columns of RCON table"""
 r_con = (
     0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40,
     0x80, 0x1B, 0x36, 0x6C, 0xD8, 0xAB, 0x4D, 0x9A,
@@ -147,7 +154,8 @@ def pad(plaintext):
     return plaintext + padding
 
 
-def split_blocks(message, block_size=16):
+def split_blocks(message):
+    block_size = 16
     assert len(message) % block_size == 0
     return [message[i:i + 16] for i in range(0, len(message), block_size)]
 
@@ -181,33 +189,29 @@ def expand_key(master_key):
     """
     Expands and returns a list of key matrices for the given master_key.
     """
-    # Initialize round keys with raw key material.
     w_columns = bytes2matrix(master_key)
 
     i = Nk
     while len(w_columns) < (Nr + 1) * 4:
-        temp = list(w_columns[-1])  # Copy previous word
+        temp = list(w_columns[-1])
 
-        # Perform schedule_core once every "row".
         if len(w_columns) % Nk == 0:
             temp.append(temp.pop(0))  # Circular shift.
             temp = [s_box[b] for b in temp]  # Map to S-BOX. (SubBytes)
-            temp[0] ^= r_con[i // Nk]  # XOR with first byte of R-CON, since the others bytes of R-CON are 0.
+            temp[0] ^= r_con[i // Nk]  # XOR with first byte of R-CON
 
         elif Nk>6 and i % Nk == 4:
-            # Run word through S-box in the every fourth iteration when using a 256-bit key.
             temp = [s_box[b] for b in temp]
 
         temp = xor_bytes(temp, w_columns[-Nk])  # XOR with equivalent word from previous iteration.
         w_columns.append(list(temp))
         i += 1
 
-    # Group key words in 4x4 byte matrices.
     return [w_columns[4 * i: 4 * (i + 1)] for i in range(len(w_columns) // 4)]
 
 
 def encrypt_ecb(key, plaintext):
-    paddedInput = pad(plaintext)  # TODO padding?
+    paddedInput = pad(plaintext)
     inputBlocks = split_blocks(paddedInput)
 
     if isinstance(key, str):
@@ -277,12 +281,10 @@ if __name__ == '__main__':
     elif 'decrypt'.startswith(sys.argv[1]):
         file = open('input.bin', 'rb')
         inputMessage = bytearray(file.read())
-        print(mul(0x3, 2))
-        print(mul(2, 0x3))
         print("Size of input: " + str(len(inputMessage)) + " Bytes")
         res = decrypt_ecb(sys.argv[2], inputMessage)
         out = open('output.txt', 'wb')
         out.write(res)
     else:
-        print('Expected command "encrypt" or "decrypt" in first argument and key as second')
+        print('Expected command "encrypt" or "decrypt" in first argument and key in second argument')
 
