@@ -132,3 +132,7 @@ dmypy.json
 .idea/
 *.bin
 *.png
+task2_AES/output.txt
+task2_AES/big_input.txt
+task2_AES/input.txt
+task4_SIEM/dump.pcapng

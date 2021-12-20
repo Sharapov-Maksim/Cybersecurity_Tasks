@@ -1,0 +1,56 @@
+{
+  "rules": [
+    {
+      "type": "rule-black-list",
+      "content": [
+        {
+          "side": "source",
+          "content": {
+            "ip": "155.133.226.75",
+            "port": "any"
+          }
+        },
+        {
+          "side": "destination",
+          "content": {
+            "ip": "178.154.131.215",
+            "port": 443
+          }
+        }
+      ]
+    },
+    {
+      "type": "rule-white-list",
+      "content": [
+        {
+          "side": "source",
+          "content": {
+            "ip": "84.237.50.154",
+            "port": "any"
+          }
+        },
+        {
+          "side": "destination",
+          "content": {
+            "ip": "84.234.50.154",
+            "port": 443
+          }
+        },
+        {
+          "side": "destination",
+          "content": {
+            "ip": "192.168.0.6",
+            "port": "any"
+          }
+        },
+        {
+          "side": "source",
+          "content": {
+            "ip": "162.159.135.234",
+            "port": 443
+          }
+        }
+      ]
+    }
+  ]
+}
