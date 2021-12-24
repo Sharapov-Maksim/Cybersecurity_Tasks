@@ -30,8 +30,8 @@ def checkNetworkPackageAllowed(ruleData, event):
                 return False
 
         elif content.side == "destination":
-            if (content.ip != "any" and content.ip != event.destinationIP) and \
-                    (content.port != "any" and content.port != event.destinationPort):
+            if (content.ip == "any" or content.ip == event.destinationIP) and \
+                    (content.port == "any" or content.port == event.destinationPort):
                 return False
 
     print("Anomaly from white-list detected, package:")
